@@ -6,7 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useService } from '@/context/ServiceContext';
 import { useBooking } from '@/context/BookingContext';
 import { CATEGORY_LABELS } from '@/lib/services-data';
-import { Flame, FileText, ArrowRight, BookOpen, UserCheck, Clock } from 'lucide-react';
+import { Flame, FileText, ArrowRight, BookOpen, UserCheck, Clock, Bot } from 'lucide-react';
 
 export const FeaturedServices: React.FC = () => {
   const { language, t } = useLanguage();
@@ -99,34 +99,27 @@ export const FeaturedServices: React.FC = () => {
                     </ul>
                   </div>
 
-                  {/* Pricing & Actions */}
-                  <div className="pt-3 border-t border-slate-100 space-y-3">
-                    <div className="grid grid-cols-2 gap-2 text-center">
-                      <div className="bg-amber-50 rounded-lg p-2 border border-amber-200/70">
-                        <span className="text-[10px] text-amber-800 font-semibold block">{t.diyLabel}</span>
-                        <span className="text-sm font-black text-amber-700">₹{service.pricing.diyPrice}</span>
-                      </div>
-                      <div className="bg-emerald-50 rounded-lg p-2 border border-emerald-200/70">
-                        <span className="text-[10px] text-emerald-800 font-semibold block">{t.assistedLabel}</span>
-                        <span className="text-sm font-black text-emerald-700">₹{service.pricing.assistedPrice}</span>
-                      </div>
+                  {/* Actions & Official Portal */}
+                  <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium px-1">
+                      <span>{service.officialPortal || 'Govt Portal'}</span>
+                      <span className="text-emerald-700 font-bold">100% सत्यापित</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
                       <button
-                        onClick={() => openBooking(service, 'diy')}
-                        className="flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-300 transition"
-                        title="Download verified DIY guide"
+                        onClick={() => window.dispatchEvent(new CustomEvent('toggle-ai-chat'))}
+                        className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-800 hover:text-emerald-800 text-xs font-bold border border-slate-300 hover:border-emerald-300 transition"
                       >
-                        <BookOpen className="w-3.5 h-3.5 text-amber-600" />
-                        <span>DIY गाइड</span>
+                        <Bot className="w-4 h-4 text-emerald-600" />
+                        <span>{language === 'hi' ? 'AI से पूछें' : 'Ask AI'}</span>
                       </button>
 
                       <button
                         onClick={() => openBooking(service, 'assisted')}
-                        className="flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition"
+                        className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition active:scale-95"
                       >
-                        <UserCheck className="w-3.5 h-3.5" />
+                        <UserCheck className="w-4 h-4" />
                         <span>{t.startServiceBtn}</span>
                       </button>
                     </div>

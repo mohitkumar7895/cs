@@ -83,8 +83,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenCockpit }) => {
                 </a>
               </li>
               <li>
-                <button onClick={() => openTracker()} className="hover:text-emerald-700 transition text-left">
-                  {language === 'hi' ? '📥 ई-गाइड डाउनलोड व UTR सत्यापन' : '📥 E-Guide Download & UTR Verification'}
+                <button 
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggle-ai-chat'))} 
+                  className="hover:text-emerald-700 transition text-left flex items-center gap-1.5"
+                >
+                  <span>🤖 {language === 'hi' ? 'AI सहायक से पूछें (24/7 Live)' : 'Ask DigiAI Assistant'}</span>
                 </button>
               </li>
               <li>

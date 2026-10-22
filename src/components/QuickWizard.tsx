@@ -51,7 +51,7 @@ export const QuickWizard: React.FC = () => {
         </div>
 
         {/* Category Pills Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-300">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {categories.map((cat) => {
             const isActive = activeCategory === cat.id;
             return (

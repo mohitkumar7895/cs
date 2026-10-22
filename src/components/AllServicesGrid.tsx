@@ -6,7 +6,7 @@ import { useService } from '@/context/ServiceContext';
 import { useBooking } from '@/context/BookingContext';
 import { ServiceCategory } from '@/models/types';
 import { CATEGORY_LABELS } from '@/lib/services-data';
-import { Layers, ChevronDown, ChevronUp, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Layers, ChevronDown, ChevronUp, CheckCircle2, ExternalLink, Bot, Clock } from 'lucide-react';
 
 export const AllServicesGrid: React.FC = () => {
   const { language, t } = useLanguage();
@@ -130,29 +130,27 @@ export const AllServicesGrid: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Actions & Pricing */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase font-semibold">
-                        {t.diyLabel}: <span className="text-amber-600 font-bold">₹{service.pricing.diyPrice}</span>
-                      </div>
-                      <div className="text-[10px] text-slate-500 uppercase font-semibold">
-                        {t.assistedLabel}: <span className="text-emerald-700 font-bold">₹{service.pricing.assistedPrice}</span>
-                      </div>
+                  {/* Actions & Verification */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                      <span>{language === 'hi' ? service.estimatedTimeHi : service.estimatedTimeEn}</span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       <button
-                        onClick={() => openBooking(service, 'diy')}
-                        className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-300 transition"
+                        onClick={() => window.dispatchEvent(new CustomEvent('toggle-ai-chat'))}
+                        className="p-1.5 px-2 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 text-xs font-bold border border-slate-300 hover:border-emerald-300 transition flex items-center gap-1"
+                        title="AI से पूछें"
                       >
-                        DIY ई-गाइड
+                        <Bot className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="hidden sm:inline">AI</span>
                       </button>
                       <button
                         onClick={() => openBooking(service, 'assisted')}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition"
+                        className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-xs transition active:scale-95"
                       >
-                        असिस्ट
+                        {language === 'hi' ? 'आवेदन करें' : 'Apply'}
                       </button>
                     </div>
                   </div>

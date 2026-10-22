@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useBooking } from '@/context/BookingContext';
-import { X, CheckCircle, ShieldCheck, QrCode, FileText, ArrowRight, Download, MessageCircle, AlertCircle } from 'lucide-react';
+import { X, CheckCircle, ShieldCheck, FileText, ArrowRight, MessageCircle, AlertCircle, Phone, UserCheck, Clock } from 'lucide-react';
 
 export const ServiceBookingModal: React.FC = () => {
   const { language } = useLanguage();
@@ -11,110 +11,68 @@ export const ServiceBookingModal: React.FC = () => {
     isBookingModalOpen,
     closeBooking,
     selectedService,
-    serviceType,
-    submitBooking
+    submitBooking,
+    triggerConfetti
   } = useBooking();
 
-  const [currentMode, setCurrentMode] = useState<'diy' | 'assisted'>('assisted');
-  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [fullName, setFullName] = useState('');
   const [mobile, setMobile] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [notes, setNotes] = useState('');
-  const [utrNumber, setUtrNumber] = useState('');
   const [bookingId, setBookingId] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   React.useEffect(() => {
-    if (serviceType) {
-      setCurrentMode(serviceType);
+    if (isBookingModalOpen) {
+      setIsSubmitted(false);
+      setBookingId('');
+      setErrorMsg('');
+      setFullName('');
+      setMobile('');
+      setWhatsapp('');
+      setNotes('');
     }
-    setStep(1);
-    setUtrNumber('');
-    setErrorMsg('');
-  }, [serviceType, isBookingModalOpen]);
+  }, [isBookingModalOpen]);
 
   if (!isBookingModalOpen || !selectedService) return null;
 
-  const currentPrice = currentMode === 'diy' 
-    ? selectedService.pricing.diyPrice 
-    : selectedService.pricing.assistedPrice;
-
-  const handleNextToPayment = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !mobile.trim()) {
-      setErrorMsg('कृपया नाम एवं मोबाइल नंबर भरें।');
+      setErrorMsg(language === 'hi' ? 'कृपया नाम एवं मोबाइल नंबर भरें।' : 'Please enter your full name and mobile number.');
       return;
     }
-    if (mobile.replace(/\D/g, '').length < 10) {
-      setErrorMsg('कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें।');
+    const cleanMobile = mobile.replace(/\D/g, '');
+    if (cleanMobile.length < 10) {
+      setErrorMsg(language === 'hi' ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें।' : 'Please enter a valid 10-digit mobile number.');
       return;
     }
     setErrorMsg('');
-    setStep(2);
-  };
-
-  const handleCompleteBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!utrNumber.trim() || utrNumber.trim().length < 8) {
-      setErrorMsg('कृपया भुगतान के बाद 12-अंक का वैध UTR नंबर दर्ज करें।');
-      return;
-    }
-
     setIsSubmitting(true);
-    setErrorMsg('');
 
     try {
       const res = await submitBooking({
-        fullName,
-        mobile,
-        whatsapp: whatsapp || mobile,
-        notes,
-        utrNumber: utrNumber.trim()
+        fullName: fullName.trim(),
+        mobile: cleanMobile,
+        whatsapp: whatsapp ? whatsapp.replace(/\D/g, '') : cleanMobile,
+        notes: notes.trim(),
+        utrNumber: 'DIRECT-FACILITATION'
       });
       setBookingId(res.id);
-      setStep(3);
+      setIsSubmitted(true);
+      triggerConfetti();
     } catch {
-      setErrorMsg('सबमिशन में त्रुटि हुई, कृपया पुनः प्रयास करें।');
+      setErrorMsg(language === 'hi' ? 'सबमिशन में त्रुटि हुई, कृपया पुनः प्रयास करें।' : 'Submission failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const downloadEGuideMock = () => {
-    const content = `=====================================================
-DIGASSIST INDIA - OFFICIAL CERTIFIED E-GUIDE
-MSME REGISTRATION: UDYAM-UP-27-0070488
-CHIEF CONSULTANT: SHAN MOHAMMAD
-=====================================================
-BOOKING ID: ${bookingId || 'DA-OFFICIAL'}
-SERVICE: ${selectedService.nameHi} (${selectedService.nameEn})
-APPLICANT: ${fullName}
-MOBILE: ${mobile}
-UTR REF: ${utrNumber}
-MODE: ${currentMode === 'diy' ? 'DIY E-Guide' : 'Full Assisted Service'}
-PRICE PAID: ₹${currentPrice}
-
-REQUIRED DOCUMENTS CHECKLIST:
-${selectedService.documentsHi.map((d, i) => `${i + 1}. ${d}`).join('\n')}
-
-OFFICIAL INSTRUCTIONS & COMPLIANCE:
-1. Please keep original identity documents ready for biometric / physical inspection if requested by respective departmental authorities.
-2. Official portal reference: ${selectedService.officialPortal || 'State Government Portal'}.
-3. For status queries or operator help, message WhatsApp at +91 94572 17048.
-=====================================================`;
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `DigAssist_${selectedService.id}_Guide.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  const serviceName = language === 'hi' ? selectedService.nameHi : selectedService.nameEn;
+  const docs = language === 'hi' ? selectedService.documentsHi : selectedService.documentsEn;
+  const approxTime = language === 'hi' ? selectedService.estimatedTimeHi : selectedService.estimatedTimeEn;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -123,15 +81,15 @@ OFFICIAL INSTRUCTIONS & COMPLIANCE:
         {/* Top Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold text-xs">
-              DA
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold text-xs">
+              MSME
             </div>
             <div>
-              <span className="text-[11px] font-mono text-emerald-800 font-bold block">
+              <span className="text-[10px] font-mono text-emerald-800 font-bold block">
                 UDYAM-UP-27-0070488
               </span>
               <h3 className="text-sm font-bold text-slate-900 line-clamp-1">
-                {language === 'hi' ? selectedService.nameHi : selectedService.nameEn}
+                {serviceName}
               </h3>
             </div>
           </div>
@@ -143,39 +101,8 @@ OFFICIAL INSTRUCTIONS & COMPLIANCE:
           </button>
         </div>
 
-        {/* Mode Selector (DIY vs Assisted) */}
-        {step < 3 && (
-          <div className="p-4 bg-slate-100/70 border-b border-slate-200">
-            <div className="grid grid-cols-2 gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-xs">
-              <button
-                type="button"
-                onClick={() => setCurrentMode('diy')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                  currentMode === 'diy'
-                    ? 'bg-amber-500 text-slate-950 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <span>DIY ई-गाइड (₹{selectedService.pricing.diyPrice})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setCurrentMode('assisted')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                  currentMode === 'assisted'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <span>असिस्टेड सेवा (₹{selectedService.pricing.assistedPrice})</span>
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Modal Body Content */}
-        <div className="p-5 overflow-y-auto space-y-4 flex-grow">
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-grow">
           {errorMsg && (
             <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
@@ -183,43 +110,51 @@ OFFICIAL INSTRUCTIONS & COMPLIANCE:
             </div>
           )}
 
-          {/* STEP 1: Applicant Details */}
-          {step === 1 && (
-            <form onSubmit={handleNextToPayment} className="space-y-4">
-              <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-2 text-xs">
-                <span className="font-bold text-emerald-800 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>आवश्यक दस्तावेज सूची:</span>
-                </span>
-                <ul className="text-slate-700 space-y-1">
-                  {selectedService.documentsHi.map((doc, idx) => (
-                    <li key={idx} className="flex items-center gap-1.5">
-                      <span className="text-emerald-600 font-bold">•</span>
-                      <span>{doc}</span>
-                    </li>
+          {!isSubmitted ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              
+              {/* Document Checklist Pill Box */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-emerald-800 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-emerald-600" />
+                    <span>{language === 'hi' ? 'जरूरी दस्तावेज चेकलिस्ट:' : 'Required Documents Checklist:'}</span>
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{approxTime}</span>
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                  {docs.map((doc, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border border-slate-200/80 text-[11px] text-slate-700 font-medium">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span className="line-clamp-1">{doc}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
 
+              {/* Applicant Input Fields */}
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    आवेदक का पूरा नाम (Full Name) *
+                    {language === 'hi' ? 'आवेदक का पूरा नाम (Full Name) *' : 'Full Name *'}
                   </label>
                   <input
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="उदा. राहुल शर्मा"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 focus:border-emerald-500 outline-none shadow-xs"
+                    placeholder={language === 'hi' ? 'उदा. राहुल शर्मा' : 'e.g. Rahul Sharma'}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm text-slate-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition font-medium"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      मोबाइल नंबर (10 अंक) *
+                      {language === 'hi' ? 'मोबाइल नंबर *' : 'Mobile Number *'}
                     </label>
                     <input
                       type="tel"
@@ -227,172 +162,128 @@ OFFICIAL INSTRUCTIONS & COMPLIANCE:
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       placeholder="9876543210"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 focus:border-emerald-500 outline-none font-mono shadow-xs"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm text-slate-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none font-mono font-medium transition"
                     />
                   </div>
+
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      WhatsApp नंबर (वैकल्पिक)
+                      {language === 'hi' ? 'व्हाट्सएप नंबर (वैकल्पिक)' : 'WhatsApp (Optional)'}
                     </label>
                     <input
                       type="tel"
                       value={whatsapp}
                       onChange={(e) => setWhatsapp(e.target.value)}
-                      placeholder="9876543210"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 focus:border-emerald-500 outline-none font-mono shadow-xs"
+                      placeholder={mobile || '9876543210'}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm text-slate-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none font-mono font-medium transition"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    टिप्पणी या विशेष आवश्यकता (Optional Notes)
+                    {language === 'hi' ? 'कोई विशेष विवरण / नोट (वैकल्पिक)' : 'Special Note / Details (Optional)'}
                   </label>
                   <textarea
                     rows={2}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="उदा. तत्काल अपॉइंटमेंट या नाम सुधार..."
-                    className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 focus:border-emerald-500 outline-none shadow-xs"
+                    placeholder={language === 'hi' ? 'उदा. नया आवेदन करना है / सुधार करवाना है' : 'Any specific requirement or urgency...'}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none resize-none font-medium transition"
                   />
                 </div>
               </div>
 
+              {/* Trust Box */}
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="font-medium">
+                  {language === 'hi' 
+                    ? 'शान मोहम्मद द्वारा 100% व्यक्तिगत देखरेख व त्रुटिहीन दस्तावेज जांच।' 
+                    : '100% individual verification & oversight under Shan Mohammad.'}
+                </span>
+              </div>
+
+              {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-md shadow-emerald-600/25 transition flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
               >
-                <span>आगे बढ़ें (₹{currentPrice} का भुगतान)</span>
-                <ArrowRight className="w-4 h-4" />
+                {isSubmitting ? (
+                  <span>{language === 'hi' ? 'सबमिट हो रहा है...' : 'Submitting...'}</span>
+                ) : (
+                  <>
+                    <UserCheck className="w-4 h-4" />
+                    <span>{language === 'hi' ? 'आवेदन सबमिट करें व शान जी से जुड़ें' : 'Submit Application & Connect'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </form>
-          )}
-
-          {/* STEP 2: UPI QR Payment & 12-digit UTR Input */}
-          {step === 2 && (
-            <form onSubmit={handleCompleteBooking} className="space-y-4">
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-center space-y-3">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
-                  <QrCode className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>आधिकारिक UPI QR कोड</span>
-                </div>
-
-                <div className="relative mx-auto w-36 h-36 bg-white p-2 rounded-xl shadow-md flex flex-col items-center justify-center border-2 border-slate-200">
-                  <div className="w-full h-full border border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center p-2 text-slate-900 text-center">
-                    <span className="font-mono text-[10px] font-bold text-emerald-800">DigAssist India</span>
-                    <QrCode className="w-16 h-16 text-slate-900 my-1" />
-                    <span className="text-[10px] font-bold font-mono">₹{currentPrice}</span>
-                  </div>
-                </div>
-
-                <div className="text-xs space-y-1">
-                  <p className="text-slate-800 font-semibold">
-                    UPI ID: <span className="font-mono text-emerald-700 font-bold">digassist@upi</span>
-                  </p>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    PhonePe / Google Pay / Paytm / BHIM द्वारा स्कैन करें
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800">
-                  भुगतान का 12-अंक का UTR / Transaction Ref नंबर दर्ज करें *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={utrNumber}
-                  onChange={(e) => setUtrNumber(e.target.value)}
-                  placeholder="उदा. 432109876543 (12 अंक)"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 focus:border-emerald-500 outline-none font-mono tracking-wider shadow-xs"
-                />
-                <p className="text-[11px] text-slate-500 font-medium">
-                  पेमेंट रसीद में &apos;Bank Ref No&apos; या &apos;UTR&apos; 12 अंकों का होता है।
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="w-1/3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition border border-slate-300"
-                >
-                  पीछे
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-2/3 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5"
-                >
-                  {isSubmitting ? (
-                    <span>सत्यापन हो रहा है...</span>
-                  ) : (
-                    <>
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>सत्यापित करें व अनलॉक करें</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* STEP 3: Success & Download */}
-          {step === 3 && (
-            <div className="text-center py-4 space-y-4 animate-in zoom-in-95 duration-300">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400 text-emerald-700 mx-auto flex items-center justify-center shadow-xs">
-                <CheckCircle className="w-10 h-10" />
+          ) : (
+            /* Success Screen */
+            <div className="space-y-5 text-center py-4 animate-in zoom-in-95">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400 flex items-center justify-center mx-auto text-emerald-600 shadow-md">
+                <CheckCircle className="w-9 h-9" />
               </div>
 
               <div className="space-y-1">
                 <h4 className="text-xl font-black text-slate-900">
-                  आवेदन व UTR सफलतापूर्वक दर्ज!
+                  {language === 'hi' ? 'आवेदन सफलतापूर्वक दर्ज हुआ!' : 'Application Successfully Registered!'}
                 </h4>
-                <p className="text-xs text-emerald-800 font-mono font-bold">
-                  रजिस्ट्रेशन टोकन: {bookingId}
+                <p className="text-xs text-slate-600 font-medium">
+                  {language === 'hi' 
+                    ? 'शान मोहम्मद के ऑपरेटर डेस्क पर आपका विवरण प्राप्त हो गया है।' 
+                    : 'Your details have been recorded on Shan Mohammad\'s operator desk.'}
                 </p>
               </div>
 
-              <div className="bg-slate-50 rounded-xl p-3 text-xs text-left text-slate-700 space-y-1.5 border border-slate-200">
-                <div className="flex justify-between">
+              {/* Booking Reference Card */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left space-y-2 text-xs">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Reference ID:</span>
+                  <span className="font-mono font-bold text-emerald-700 text-sm">{bookingId}</span>
+                </div>
+                <div className="flex justify-between items-center">
                   <span className="text-slate-500 font-medium">सेवा:</span>
-                  <span className="font-bold text-slate-900">{selectedService.nameHi}</span>
+                  <span className="font-bold text-slate-900 line-clamp-1">{serviceName}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-slate-500 font-medium">आवेदक:</span>
-                  <span>{fullName} ({mobile})</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-medium">UTR संदर्भ:</span>
-                  <span className="font-mono text-emerald-800 font-bold">{utrNumber}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-medium">परामर्शदाता:</span>
-                  <span className="text-amber-800 font-bold">शान मोहम्मद (सीधा पर्यवेक्षण)</span>
+                  <span className="font-bold text-slate-900">{fullName} ({mobile})</span>
                 </div>
               </div>
 
+              {/* Direct WhatsApp Call Actions */}
               <div className="space-y-2 pt-2">
-                <button
-                  type="button"
-                  onClick={downloadEGuideMock}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>📥 अधिकृत ई-गाइड व प्रक्रिया रसीद डाउनलोड करें</span>
-                </button>
-
                 <a
-                  href={`https://wa.me/919457217048?text=Namaste%20Shan%20ji,%20I%20have%20submitted%20my%20application%20for%20${encodeURIComponent(selectedService.nameHi)}%20with%20Token%20${bookingId}%20and%20UTR%20${utrNumber}`}
+                  href={`https://wa.me/919457217048?text=${encodeURIComponent(
+                    `नमस्ते शान जी, मैंने "${serviceName}" के लिए आवेदन किया है।\nरेफरेंस ID: ${bookingId}\nनाम: ${fullName}\nकृपया आगे की प्रक्रिया बताएं।`
+                  )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs transition flex items-center justify-center gap-2"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition active:scale-95"
                 >
-                  <MessageCircle className="w-4 h-4 text-emerald-600" />
-                  <span>सीधे ऑपरेटर को WhatsApp पर टोकन भेजें</span>
+                  <MessageCircle className="w-4 h-4" />
+                  <span>{language === 'hi' ? 'WhatsApp पर दस्तावेज भेजें' : 'Send Documents on WhatsApp'}</span>
+                </a>
+
+                <a
+                  href="tel:+919457217048"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 transition"
+                >
+                  <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{language === 'hi' ? 'शान जी को सीधे कॉल करें: 9457217048' : 'Call Shan Directly: 9457217048'}</span>
                 </a>
               </div>
+
+              <button
+                onClick={closeBooking}
+                className="text-xs text-slate-500 hover:text-slate-800 font-semibold underline pt-2"
+              >
+                {language === 'hi' ? 'खिड़की बंद करें' : 'Close window'}
+              </button>
             </div>
           )}
 

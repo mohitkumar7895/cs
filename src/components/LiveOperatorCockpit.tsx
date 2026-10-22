@@ -28,25 +28,25 @@ export const LiveOperatorCockpit: React.FC<LiveOperatorCockpitProps> = ({ isOpen
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-2xl rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 overflow-hidden max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+      <div className="relative w-full max-w-2xl rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 overflow-hidden max-h-[92vh] flex flex-col">
         
         {/* Cockpit Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-200 bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800">
-              <Activity className="w-5 h-5 animate-pulse" />
+        <div className="flex items-center justify-between p-3.5 sm:p-5 border-b border-slate-200 bg-slate-50">
+          <div className="flex items-center gap-2.5 sm:gap-3 truncate">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800 flex-shrink-0">
+              <Activity className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-slate-900">
+            <div className="truncate">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h3 className="text-xs sm:text-base font-bold text-slate-900 truncate">
                   🔒 Operator Cockpit — Shan Mohammad
                 </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                <span className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 flex-shrink-0">
                   LIVE DESK
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-[10px] sm:text-xs text-slate-500 font-medium truncate">
                 Ramgarh Road / Post Office Chauraha, Deedamai, Firozabad (UP)
               </p>
             </div>
